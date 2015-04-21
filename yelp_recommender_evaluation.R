@@ -9,7 +9,7 @@ library(recommenderlab)
 library(plyr)
 
 # read the reviews
-yelp_review = read.csv("yelp_academic_dataset_review_AZ_food_no_text.csv", stringsAsFactors=FALSE)
+yelp_review = read.csv("Downloads/yelp_academic_dataset_review_AZ_food_no_text.csv", stringsAsFactors=FALSE)
 # TODO: filter by Phoenix
 # TODO: #NAME?
 
@@ -44,30 +44,27 @@ r = as(m, "realRatingMatrix")
 # rm(m)
 # this is a good place to save your workspace!!
 
-algorithms = list(
-	"random" = list(name="RANDOM", param=NULL),
-	"popular" = list(name="POPULAR", param=NULL)
-	#"user-based CF" = list(name="UBCF", param=list(method="Cosine", nn=50, minRating=5))
+algorithms = list("random" = list(name="RANDOM", param=NULL), "popular" = list(name="POPULAR", param=NULL))
 	# TODO: UBCF
 	# TODO: IBCF
 	# TODO: others
-)
+# )
 # TODO: Variety of Similarity methods
 # TODO: Variety of Normalization methods (centering?)
 
 # evaluation schemes
 # split
-split = evaluationScheme(r, method="split", train = 0.9, k=1, given=minUserReviews, goodRating=5)
-split_evals = evaluate(split, algorithms, n=c(1, 3, 5, 10, 15, 20))
+kFold = evaluationScheme(r, method="cross-validation", k=10, given=minUserReviews, goodRating=5)
+kFold_evals = evaluate(kFold, algorithms, n=c(1, 3, 5, 10, 15, 20))
 # TODO: k-fold
 # TODO: bootstrap sampling
 
 # evaluation results
-getConfusionMatrix(split_evals[["popular"]])
+getConfusionMatrix(kFold_evals[["popular"]])
 
 # visualization
 # Split: ROC Curve
-plot(split_evals, annotate=1:length(algorithms), legend="topleft")
+plot(kFold_evals, annotate=1:length(algorithms), legend="topleft")
 # TODO: plot prec/recall chart
 
 # TODO: Evaluate Predictions (RMSE)
