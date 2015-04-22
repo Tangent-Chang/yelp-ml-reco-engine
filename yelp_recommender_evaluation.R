@@ -44,7 +44,7 @@ r = as(m, "realRatingMatrix")
 # rm(m)
 # this is a good place to save your workspace!!
 
-algorithms = list("random" = list(name="RANDOM", param=NULL), "popular" = list(name="POPULAR", param=NULL))
+algorithms = list("random" = list(name="RANDOM", param=NULL), "popular" = list(name="POPULAR", param=NULL), "user-based CF" = list(name="UBCF", param=list(method="Cosine", nn=50, minRating=5)))
 	# TODO: UBCF
 	# TODO: IBCF
 	# TODO: others
@@ -53,7 +53,7 @@ algorithms = list("random" = list(name="RANDOM", param=NULL), "popular" = list(n
 # TODO: Variety of Normalization methods (centering?)
 
 # evaluation schemes
-# split
+# k-fold
 kFold = evaluationScheme(r, method="cross-validation", k=10, given=minUserReviews, goodRating=5)
 kFold_evals = evaluate(kFold, algorithms, n=c(1, 3, 5, 10, 15, 20))
 # TODO: k-fold
@@ -61,15 +61,29 @@ kFold_evals = evaluate(kFold, algorithms, n=c(1, 3, 5, 10, 15, 20))
 
 # evaluation results
 getConfusionMatrix(kFold_evals[["popular"]])
+getConfusionMatrix(kFold_evals[["random"]])
+getConfusionMatrix(kFold_evals[["user-based CF"]])
+
+x=random_avg[,"precision"]
+y=popular_avg[,"precision"]
+wilcox.test(y,x,alternative = "greater")
+
+# convert matrix to table
+# popular_result_table = as.data.frame(matrix(popular_result[[10]],nrow=6, ncol=8, dimnames=list(c("1","3","5","10","15","20"),c("TP","FP","FN","TN","precision","recall","TPR","FPR"))))
+
 
 # visualization
 # Split: ROC Curve
 plot(kFold_evals, annotate=1:length(algorithms), legend="topleft")
 # TODO: plot prec/recall chart
-
+plot(kFold_evals, "prec/rec", annotate=1:length(algorithms), legend="topleft")
 # TODO: Evaluate Predictions (RMSE)
 # TODO: Evaluate Binarized data
 # TODO: Build a script that can make a prediction (top 5) and retrieve the restaurant names for a user
+
+# MAE
+random_avg = avg(kFold_evals[["random"]])
+random_mae= (random_avg[,"FP"]+ random_avg[,"FN"])/(random_avg[,"FP"]+random_avg[,"FN"]+random_avg[,"TN"]+1-random_avg[,"TP"])
 
 # --- misc functions ---
 # simple search for value
