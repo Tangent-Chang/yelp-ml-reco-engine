@@ -9,9 +9,7 @@ library(recommenderlab)
 library(plyr)
 
 # read the reviews
-yelp_review = read.csv("Downloads/yelp_academic_dataset_review_AZ_food_no_text.csv", stringsAsFactors=FALSE)
-# TODO: filter by Phoenix
-# TODO: #NAME?
+yelp_review = read.csv("Desktop/Recommender/yelp_academic_dataset_review_peoria_no_text.csv", stringsAsFactors=FALSE)
 
 # project relevant columns
 yelp_rating_flat = yelp_review[,c("user_id","business_id","stars")]
@@ -26,7 +24,8 @@ yelp_rating_unique = yelp_rating_unique[yelp_rating_unique$business_id %in% top_
 
 # filter users who have made less than x reviews
 #TODO: how does min user review affect evaluation?
-minUserReviews = 10
+minUserReviews = 3
+# change minUserReviews from 10 to 3, since dataset is smaller now.
 user_ids <- table(yelp_rating_unique$user_id)
 yelp_rating_unique = yelp_rating_unique[yelp_rating_unique$user_id %in% names(user_ids)[user_ids >= minUserReviews], ]
 
@@ -44,38 +43,77 @@ r = as(m, "realRatingMatrix")
 # rm(m)
 # this is a good place to save your workspace!!
 
-algorithms = list("random" = list(name="RANDOM", param=NULL), "popular" = list(name="POPULAR", param=NULL), "user-based CF" = list(name="UBCF", param=list(method="Cosine", nn=50, minRating=5)))
+#algorithms = list("random" = list(name="RANDOM", param=NULL), "popular" = list(name="POPULAR", param=NULL), "user-based CF" = list(name="UBCF", param=list(method="Cosine", nn=50, minRating=5)))
 	# TODO: UBCF
 	# TODO: IBCF
 	# TODO: others
-# )
+
+var_nn = 50
+algorithms = list(
+	"random" = list(name="RANDOM", param=NULL),
+	"popular" = list(name="POPULAR", param=NULL),
+	"ubcf-c" = list(name="UBCF", param=list(method="Cosine", nn=var_nn)),
+	"ubcf-p" = list(name="UBCF", param=list(method="Pearson", nn=var_nn)),
+	"ubcf-j" = list(name="UBCF", param=list(method="Jaccard", nn=var_nn)),
+	"ibcf-c" = list(name="IBCF", param=list(method="Cosine")),
+	"ibcf-p" = list(name="IBCF", param=list(method="Pearson")),
+	"ibcf-j" = list(name="IBCF", param=list(method="Jaccard")),
+	"ubcf-c-centered" = list(name="UBCF", param=list(method="Cosine", normalize="center", nn=var_nn)),
+	"ubcf-p-centered" = list(name="UBCF", param=list(method="Pearson", normalize="center", nn=var_nn)),
+	"ubcf-j-centered" = list(name="UBCF", param=list(method="Jaccard", normalize="center", nn=var_nn)),
+	"ibcf-c-centered" = list(name="IBCF", param=list(method="Cosine", normalize="center")),
+	"ibcf-p-centered" = list(name="IBCF", param=list(method="Pearson", normalize="center")),
+	"ibcf-j-centered" = list(name="IBCF", param=list(method="Jaccard", normalize="center")),
+	"svd" = list(name="SVD", param=list(categories = 20, method="Cosine", normalize = "center", normalize_sim_matrix = FALSE, alpha = 0.5, treat_na = "median", minRating = NA))
+	#"pca" = list(name="PCA", param=list(categories = 20, method="Cosine", normalize = "center", normalize_sim_matrix = FALSE, alpha = 0.5, na_as_zero = FALSE, minRating = NA))
+)
+# IBCF doesn't provide nn as param
+# PCA comes an error:'princomp' can only be used with more units than variables
+
 # TODO: Variety of Similarity methods
 # TODO: Variety of Normalization methods (centering?)
 
 # evaluation schemes
 # k-fold
-kFold = evaluationScheme(r, method="cross-validation", k=10, given=minUserReviews, goodRating=5)
+kFold = evaluationScheme(r, method="cross-validation", k=10, given=minUserReviews, goodRating=4)
+# change goodRating from 5 to 4
 kFold_evals = evaluate(kFold, algorithms, n=c(1, 3, 5, 10, 15, 20))
-# TODO: k-fold
 # TODO: bootstrap sampling
 
 # evaluation results
-getConfusionMatrix(kFold_evals[["popular"]])
-getConfusionMatrix(kFold_evals[["random"]])
-getConfusionMatrix(kFold_evals[["user-based CF"]])
+CFM_random = getConfusionMatrix(kFold_evals[["random"]])
+CFM_popular =getConfusionMatrix(kFold_evals[["popular"]])
+CFM_ubcf_c =getConfusionMatrix(kFold_evals[["ubcf-c"]])
+CFM_ubcf_p =getConfusionMatrix(kFold_evals[["ubcf-p"]])
+CFM_ubcf_j =getConfusionMatrix(kFold_evals[["ubcf-j"]])
+CFM_ibcf_c =getConfusionMatrix(kFold_evals[["ibcf-c"]])
+CFM_ibcf_p =getConfusionMatrix(kFold_evals[["ibcf-p"]])
+CFM_ibcf_j =getConfusionMatrix(kFold_evals[["ibcf-j"]])
+CFM_ubcf_c =getConfusionMatrix(kFold_evals[["ubcf-c-centered"]])
+CFM_ubcf_p =getConfusionMatrix(kFold_evals[["ubcf-p-centered"]])
+CFM_ubcf_j =getConfusionMatrix(kFold_evals[["ubcf-j-centered"]])
+CFM_ibcf_c =getConfusionMatrix(kFold_evals[["ibcf-c-centered"]])
+CFM_ibcf_p =getConfusionMatrix(kFold_evals[["ibcf-p-centered"]])
+CFM_ibcf_j =getConfusionMatrix(kFold_evals[["ibcf-j-centered"]])
+CFM_svd =getConfusionMatrix(kFold_evals[["svd"]])
+#CFM_pca =getConfusionMatrix(kFold_evals[["pca"]])
 
-x=random_avg[,"precision"]
-y=popular_avg[,"precision"]
-wilcox.test(y,x,alternative = "greater")
+#Get average value of k-fold
+avg(kFold_evals[["svd"]])
+
+#x=random_avg[,"precision"]
+#y=popular_avg[,"precision"]
+#wilcox.test(y,x,alternative = "greater")
 
 # convert matrix to table
 # popular_result_table = as.data.frame(matrix(popular_result[[10]],nrow=6, ncol=8, dimnames=list(c("1","3","5","10","15","20"),c("TP","FP","FN","TN","precision","recall","TPR","FPR"))))
 
 
 # visualization
-# Split: ROC Curve
+# ROC Curve
 plot(kFold_evals, annotate=1:length(algorithms), legend="topleft")
-# TODO: plot prec/recall chart
+# can't draw, since each CFM contains NaN. After adjusting minUserReviews and goodRating we get the diagram.
+# plot prec/recall chart
 plot(kFold_evals, "prec/rec", annotate=1:length(algorithms), legend="topleft")
 # TODO: Evaluate Predictions (RMSE)
 # TODO: Evaluate Binarized data
