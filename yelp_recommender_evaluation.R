@@ -7,6 +7,7 @@
 # construct a matrix for users and businesses
 library(recommenderlab)
 library(plyr)
+library(flux)
 
 # read the reviews
 yelp_review = read.csv("Desktop/Recommender/yelp_academic_dataset_review_peoria_no_text.csv", stringsAsFactors=FALSE)
@@ -44,15 +45,16 @@ r = as(m, "realRatingMatrix")
 # this is a good place to save your workspace!!
 
 var_nn = 50
+var_minRating = 3
 algorithms = list(
 	"random" = list(name="RANDOM", param=NULL),
 	"popular" = list(name="POPULAR", param=NULL),
-	"ubcf-c" = list(name="UBCF", param=list(method="Cosine", nn=var_nn)),
-	"ubcf-p" = list(name="UBCF", param=list(method="Pearson", nn=var_nn)),
-	"ubcf-j" = list(name="UBCF", param=list(method="Jaccard", nn=var_nn)),
-	"ibcf-c" = list(name="IBCF", param=list(method="Cosine")),
-	"ibcf-p" = list(name="IBCF", param=list(method="Pearson")),
-	"ibcf-j" = list(name="IBCF", param=list(method="Jaccard")),
+	"ubcf-c" = list(name="UBCF", param=list(method="Cosine", nn=var_nn, minRating=var_minRating)),
+	"ubcf-p" = list(name="UBCF", param=list(method="Pearson", nn=var_nn, minRating=var_minRating)),
+	"ubcf-j" = list(name="UBCF", param=list(method="Jaccard", nn=var_nn, minRating=var_minRating)),
+	"ibcf-c" = list(name="IBCF", param=list(method="Cosine", minRating=var_minRating)),
+	"ibcf-p" = list(name="IBCF", param=list(method="Pearson", minRating=var_minRating)),
+	"ibcf-j" = list(name="IBCF", param=list(method="Jaccard", minRating=var_minRating)),
 	# ibcf's default is center, no need to assign, or we can try "Z-score"
 	# "ubcf-c-centered" = list(name="UBCF", param=list(method="Cosine", normalize="center", nn=var_nn)),
 	# "ubcf-p-centered" = list(name="UBCF", param=list(method="Pearson", normalize="center", nn=var_nn)),
